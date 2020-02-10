@@ -278,10 +278,13 @@ const TaiwanMap = new Vue({
             console.log(geometry.features);
             
          svg.selectAll('circle')
-             .data(places)
+             .data(geometry.features)
              .enter().append('circle')
-             .attr("cx", function (d) { console.log(projection(d.location.latitude)); return projection(d.location.latitude); })
-             .attr("cy", function (d) { console.log(d.location.longitude); return projection(d.location.longitude); })
+             .attr("cx", function (d) { 
+               console.log(d);
+              
+              console.log(projection(d.geometry.coordinates)); return projection(d.geometry.coordinates)[0]; })
+             .attr("cy", function (d) { console.log(projection(d.geometry.coordinates)); return projection(d.geometry.coordinates)[1]; })
              .attr("r", "8px")
              .attr("fill", "red")
 
