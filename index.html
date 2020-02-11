@@ -24,14 +24,15 @@
         <div class="shop-list">
           <h1>{{ h1 }}</h1>
           <h2>{{ h2 }}</h2>
-          <select>
-            <option v-for="option in citys" v-bind:value="option" @change="onChange($event)">
+          <select @change="onChange($event)">
+            <option value="0" disabled selected>--請選擇--</option>
+            <option v-for="option in citys" v-bind:value="option" >
               {{ option }}
             </option>
           </select>
         </div>
-        <div class="city-list"> 
-           
+        <div class="info"> 
+           {{ detail }}
         </div>
       </div>
 </body>
@@ -40,6 +41,13 @@ html,body,.container{
   width: 100%;
   height: 100%;
   overflow: hidden;
+}
+.svg_color{
+    fill: #F6831D;
+    stroke-dashoffset: 0;
+    stroke-dasharray: 700;
+    stroke-width: 2;
+    stroke: black;
 }
 .container {
     display: -webkit-box;
@@ -66,14 +74,14 @@ html,body,.container{
     text-align: center;
 }
 .taiwan-map{
-    width: 95%;
+    width: 80%;
     height: 100%;
     display: inline-block;
 }
 .shop-list{
-    width: 5%;
+    width: 20%;
     height: 100%;
-    display: inline-block;
+    display: inherit;
 }
 
 #map svg {
@@ -95,7 +103,10 @@ const TaiwanMap = new Vue({
   data: {
     h1: '縣市中文',
     h2: '縣市英文',
+    detail: '',
     citys:[],
+    circle_svg2: {},
+    projection:{}, 
   },
   methods: {
     async getTaiwanMap() {
@@ -113,13 +124,13 @@ const TaiwanMap = new Vue({
       else {
         mercatorScale = 6000;
       }
-      var projection = await d3.geo.mercator().center([121,24])
+       this.projection = await d3.geo.mercator().center([121,24])
           .scale(mercatorScale)
           .translate([width/2, height/2.5]);
       // d3：svg path 產生器
       var path = await d3.geo.path().projection(
         // !important 座標變換函式
-        projection
+        this.projection
       );
       
       // 讓d3抓svg，並寫入寬高
@@ -146,6 +157,7 @@ const TaiwanMap = new Vue({
           .data(geometry.features)
           .enter().append('path')
           .attr('d', path)
+          .attr('class',"svg_color")
           .attr({
             // 設定id，為了click時加class用
             id: (d) => 'city' + d.properties.COUNTYCODE
@@ -160,79 +172,62 @@ const TaiwanMap = new Vue({
             // 被點擊的縣市加上 .active
             document.getElementById('city' + d.properties.COUNTYCODE).classList.add('active');
           });
-          var test_url = 'dist/points.json';
+         
           var aa = [121.544742 , 25.050063];
-
-         d3.json(test_url, (error, geometry) => {
-      
-            console.log(geometry.features);
-            
-         svg.selectAll('circle')
-             .data(geometry.features)
-             .enter().append('circle')
-             .attr("cx", function (d) { 
-              console.log(d);   
-              console.log(projection(d.geometry.coordinates)); return projection(d.geometry.coordinates)[0]; })
-             .attr("cy", function (d) { console.log(projection(d.geometry.coordinates)); return projection(d.geometry.coordinates)[1]; })
-             .attr("r", "8px")
-             .attr("fill", "red")
-
-
-            });
+          
       });
       return svg;
     },
-    async getpoint(){
+    async getpoint(city_name){
+      var _this= this;
       //https://raw.githubusercontent.com/kiang/pharmacies/master/json/points.json
       //dist/points.json
-        var url = 'dist/points.json';
-        var svg = await d3.select('#svg');
-            // points
-        var aa = [121.544742,
-                    , 25.050063];
-        var bb = [-122.389809, 37.72728];
-        const width = (this.$refs.map.offsetWidth).toFixed(),
-            height = (this.$refs.map.offsetHeight).toFixed();
-              // 判斷螢幕寬度，給不同放大值
-      let mercatorScale, w = window.screen.width;
-      if(w > 1366) {
-        mercatorScale = 11000;
-      }
-      else if(w <= 1366 && w > 480) {
-        mercatorScale = 9000;
-      }
-      else {
-        mercatorScale = 6000;
-      }
-        var projection = d3.geo.mercator().center([121,24])
-          .scale(mercatorScale)
-          .translate([width/2, height/2.5]);
-        console.log(projection);
-        await d3.json(url, (error, geometry) => {
-            if (error) throw error;
-            console.log();
-            svg
-             .selectAll('circle')
-             .data([aa])
-             .enter().append('circle')
-             .attr("cx", function (d) { return projection(d)[0]; })
-             .attr("cy", function (d) { return projection(d)[1]; })
-             .attr("r", "8px")
-             .attr("fill", "red")
+      var test_url = 'https://raw.githubusercontent.com/kiang/pharmacies/master/json/points.json';
+      var circle_svg= await d3.select('#svg')
+         d3.json(test_url, (error, geometry) => {
+            var _data=[];
+            for (x in geometry.features) {
+              if(city_name==geometry.features[x].properties.county){
+                _data.push(geometry.features[x]);
+              }
+              
+            }
+            console.log(_data);
             
-        });
+            let circle = circle_svg.selectAll('circle');
+            let update = circle.data(_data);
+            let enter = update.enter();
+            let exit = update.exit();
 
-        return svg;
+            update
+              .attr("cx", function(d, i) {
+                return _this.projection(d.geometry.coordinates)[0]; })
+              .attr("cy", function (d) {  return _this.projection(d.geometry.coordinates)[1]; })
+              .attr("r", "4px")
+              .attr("fill", "red");
+
+            enter
+              .append("circle")
+              .attr("cx", function(d, i) {
+                return _this.projection(d.geometry.coordinates)[0]; })
+              .attr("cy", function (d) {  return _this.projection(d.geometry.coordinates)[1]; })
+              .attr("r", "4px")
+              .attr("fill", "red");
+            exit.remove();
+            
+          });
+           
     },
     onChange(event){
 
       console.log(event.target.value);
+      this.getpoint(event.target.value);
+
     }
   },
   mounted() {
 
     this.getTaiwanMap();
-   // this.getpoint();
   }
 })
 
