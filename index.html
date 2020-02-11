@@ -89,6 +89,7 @@ html,body,.container{
 </style>
 <script>
 Vue.component('v-select', VueSelect.VueSelect)
+
 const TaiwanMap = new Vue({
   el: '#app',
   data: {
@@ -182,6 +183,8 @@ const TaiwanMap = new Vue({
       return svg;
     },
     async getpoint(){
+      //https://raw.githubusercontent.com/kiang/pharmacies/master/json/points.json
+      //dist/points.json
         var url = 'dist/points.json';
         var svg = await d3.select('#svg');
             // points
