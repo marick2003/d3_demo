@@ -24,12 +24,17 @@
         <div class="shop-list">
           <h1>{{ h1 }}</h1>
           <h2>{{ h2 }}</h2>
+          <br>
+          口罩販賣藥局查詢
           <select @change="onChange($event)">
             <option value="0" disabled selected>--請選擇--</option>
             <option v-for="option in citys" v-bind:value="option" >
               {{ option }}
             </option>
           </select>
+          <br>
+          各縣市庫存量
+          <button>查詢</button>
         </div>
         <div class="info"> 
            {{ detail }}
@@ -81,7 +86,7 @@ html,body,.container{
 .shop-list{
     width: 20%;
     height: 100%;
-    display: inherit;
+    display: grid;
 }
 
 #map svg {
