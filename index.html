@@ -192,7 +192,7 @@ const TaiwanMap = new Vue({
          d3.json(test_url, (error, geometry) => {
             var _data=[];
             for (x in geometry.features) {
-              if(city_name==geometry.features[x].properties.county){
+              if(city_name==geometry.features[x].properties.county && geometry.features[x].properties.mask_adult>0){
                 _data.push(geometry.features[x]);
               }
               
@@ -228,7 +228,8 @@ const TaiwanMap = new Vue({
       console.log(event.target.value);
       this.getpoint(event.target.value);
 
-    }
+    },
+    
   },
   mounted() {
 
