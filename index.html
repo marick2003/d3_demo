@@ -188,14 +188,20 @@ const TaiwanMap = new Vue({
       //https://raw.githubusercontent.com/kiang/pharmacies/master/json/points.json
       //dist/points.json
       var test_url = 'https://raw.githubusercontent.com/kiang/pharmacies/master/json/points.json';
-      var circle_svg= await d3.select('#svg')
+      var circle_svg= await d3.select('#svg');
+
          d3.json(test_url, (error, geometry) => {
             var _data=[];
+      
+            var a = d3.nest()
+            .key(function(d){return d.properties["mask_adult"];})
+            .entries(geometry.features); 
+            console.log(a);
             for (x in geometry.features) {
+              ///成人口罩 > 0
               if(city_name==geometry.features[x].properties.county && geometry.features[x].properties.mask_adult>0){
                 _data.push(geometry.features[x]);
               }
-              
             }
             console.log(_data);
             
