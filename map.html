@@ -13,12 +13,13 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.2/axios.min.js"></script>
 
     <script src="https://d3js.org/d3.v3.min.js"></script>
     <title>Document</title>
 </head>
 <body>
-    <div id="vue" class="wrap">
+    <div id="app" class="wrap">
         <div class="loading" v-if="isloading">
             loading...
         </div>
@@ -83,11 +84,25 @@
 </body>
 </html>
 <style>
-
+.loading{
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  background-color: lightblue;
+  z-index: 5000;
+  display: flex;
+  justify-content: center;
+  align-items: center; 
+}
+#map {
+  height: 100vh;
+}
 </style>
 <script>
+
+let osmMap = {};
 const vue =new Vue({
-    el:"#vue",
+    el:"#app",
     data: () => ({
     data: {},
     cityName: [],
@@ -96,8 +111,57 @@ const vue =new Vue({
       city: '台北市',
       area: '大安區',
     },
-    isloading: false,
+    isloading: true,
   }),
+  mounted(){
+    osmMap = L.map('map', {
+      center: [25.03, 121.55],
+      zoom: 15,
+    });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '<a target="_blank" href="https://www.openstreetmap.org/">© OpenStreetMap 貢獻者</a>',
+      maxZoom: 15,
+    }).addTo(osmMap);
+
+    // L.marker([51.5, -0.09]).addTo(map)
+    // .bindPopup('A pretty CSS3 popup.<br> Easily customizable.')
+    // .openPopup();
+
+    Promise.all([
+      axios('https://raw.githubusercontent.com/kiang/pharmacies/master/json/points.json'),
+      axios('cityName.json'),
+    ]).then(([res, cityNameRes]) => {
+      this.data = res.data.features;
+      this.cityName = cityNameRes.data;
+      //this.updateMarker();
+      this.isloading=false;
+    });
+
+  },
+  methods:{
+    updateMarker() {
+      
+      const stores = this.data.filter((store) => {
+        if (!this.select.area) {
+          return store.properties.address.match(this.select.city);
+        }
+        return store.properties.address.match(this.select.area);
+      });
+      stores.forEach((store) => {
+        const { properties, geometry } = store;
+        addMapMarker(geometry.coordinates[0], geometry.coordinates[1], properties);
+      });
+    },
+    updateSelect(){
+
+
+    },
+    addMapMarker(){
+
+
+    }
+  }
+  
 
 
 })
