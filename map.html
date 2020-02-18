@@ -181,7 +181,7 @@ const vue =new Vue({
     });
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '<a target="_blank" href="https://www.openstreetmap.org/">© OpenStreetMap 貢獻者</a>',
-      maxZoom: 15,
+      maxZoom: 20,
     }).addTo(osmMap);
 
     // L.marker([51.5, -0.09]).addTo(map)
@@ -208,6 +208,7 @@ const vue =new Vue({
         }
         return store.properties.address.match(this.select.area);
       });
+      console.log(stores);
       stores.forEach((store) => {
         const { properties, geometry } = store;
 
