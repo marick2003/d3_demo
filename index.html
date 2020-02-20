@@ -11,19 +11,23 @@
     <script src="https://unpkg.com/vue-select@3.0.2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.min.css">
     <script src="https://d3js.org/d3.v3.min.js"></script>
+    <script
+  src="https://code.jquery.com/jquery-3.4.1.min.js"
+  integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+  crossorigin="anonymous"></script>
     <!-- zoom plus -->
-    <script src="https://d3js.org/d3-color.v1.min.js"></script>
+    <!-- <script src="https://d3js.org/d3-color.v1.min.js"></script>
     <script src="https://d3js.org/d3-ease.v1.min.js"></script>
     <script src="https://d3js.org/d3-transition.v1.min.js"></script>
     <script src="https://d3js.org/d3-drag.v1.min.js"></script>
-    <script src="https://d3js.org/d3-zoom.v1.min.js"></script>
+    <script src="https://d3js.org/d3-zoom.v1.min.js"></script> -->
     <title>MAP</title>
 </head>
 <body>
     <div class="container" id="app">
         <div class="taiwan-map" ref="map">
           <div id="map">
-            <svg id="svg" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" height="100%"></svg>
+            <svg id="svg" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" height="100%" width="100%"></svg>
           </div>
         </div>
         <div class="shop-list">
@@ -90,7 +94,7 @@ html,body,.container{
     text-align: center;
 }
 .taiwan-map{
-    width: 80%;
+    width: 100%;
     height: 100%;
     display: inline-block;
 }
@@ -98,6 +102,7 @@ html,body,.container{
     width: 20%;
     height: 100%;
     display: grid;
+    z-index: 9999;
 }
 
 #map svg {
@@ -113,6 +118,28 @@ html,body,.container{
 .open_popup{
   position: fixed;
 
+}
+/**/
+svg {
+  width: 100%;
+  vertical-align: middle;
+  background: rgba(255,255,255, 0.2);
+  /*box-shadow: inset 0 0 3px 0px #CECECE; */
+}
+
+svg circle {
+       fill: #AFF;
+        stroke: steelblue;
+        stroke-width: 2px;
+  cursor: pointer;
+}
+
+
+svg line {
+  stroke-width: 2px;
+  stroke: #79A32B;
+  fill: transparent;
+  cursor: pointer;
 }
 </style>
 <script>
@@ -153,28 +180,41 @@ const TaiwanMap = new Vue({
         // !important 座標變換函式
         this.projection
       );
-
-    
-
       //讓d3抓svg，並寫入寬高
       var svg = await d3.select('#svg')
           .attr('width', width)
           .attr('height', height)
           .attr('viewBox', `0 0 ${width} ${height}`);
+      var child = svg.append("g");
       //zoom behavior
       var x,y,s;
       var zoom = d3.behavior.zoom()
       .translate([0, 0])
-      .scaleExtent([1, 10])
+      .scaleExtent([1, 10]) //scaleExtent 設為 [1,10]，最大值鎖定在 10 倍大，預設的 scale 設為 1
       .scale(1)
       .on("zoom", zoomed);
       function zoomed(){
-        x=d3.event.translate[0];
-        y=d3.event.translate[1];
-        s=d3.event.scale;
-        svg.attr("transform", "translate(" + d3.event.translate + ") scale(" + d3.event.scale + ")");
+        var x=d3.event.translate[0];
+        var y=d3.event.translate[1];
+        var s=d3.event.scale;
+        console.log("transform:"+ "translate(" + x +","+ y + ") scale(" + s + ")")
+        svg.attr("transform", "translate(" + x +","+ y + ") scale(" + s + ")");
       }
-      svg.call(zoom);
+      child.call(zoom);
+
+     var drag = d3.behavior.drag()
+        .on('drag', function (s) {
+            // Current position:
+            this.x = this.x || 0;
+            this.y = this.y || 0;
+            // Update thee position with the delta x and y applied by the drag:
+            this.x += d3.event.dx;
+            this.y += d3.event.dy;
+                    
+            d3.select(this)
+                .attr('transform', 'translate(' + this.x + ',' + this.y + ')');
+        });
+        child.call(drag);
       // 讓d3抓GeoJSON檔，並寫入path的路徑
       var url = 'dist/COUNTY_MOI_1081121.geojson';
       await d3.json(url, (error, geometry) => {
@@ -184,16 +224,21 @@ const TaiwanMap = new Vue({
           this.citys.push(geometry.features[x].properties.COUNTYNAME);
         }
         console.log(this.citys);
-       // console.log(geometry.features);
-        // Object.keys(geometry.features.properties).forEach(function(key) {
-        // console.table('Key : ' + key + ', Value : ' + geometry.features.properties[key])
-    
-        svg
+
+        child
           .selectAll('path')
           .data(geometry.features)
           .enter().append('path')
           .attr('d', path)
           .attr('class',"svg_color")
+          .attr({
+            'cx': function(d){return d.cx;},
+            'cy': function(d){return d.cy;},
+            'x': function(d){return d.x;},
+            'y': function(d){return d.y;},
+            'r': function(d){return d.r;},
+            'fill': function(d){return d.fill;}
+          })
           .attr({
             // 設定id，為了click時加class用
             id: (d) => 'city' + d.properties.COUNTYCODE
@@ -212,25 +257,15 @@ const TaiwanMap = new Vue({
           var aa = [121.544742 , 25.050063];
           
       });
-      return svg;
+      return child;
 
-      
-      // var svg = d3.select('body')
-      // .append('svg')
-      // .attr({
-      //   'width':'100%',
-      //   'height':'100%'
-      // }).style({
-      //   'border':'1px solid #000'
-      // })
-      // .call(zoom);
     },
     async getpoint(city_name){
       var _this= this;
       //https://raw.githubusercontent.com/kiang/pharmacies/master/json/points.json
       //dist/points.json
       var test_url = 'https://raw.githubusercontent.com/kiang/pharmacies/master/json/points.json';
-      var circle_svg= await d3.select('#svg');
+      var circle_svg= await d3.select('#svg g');
 
          d3.json(test_url, (error, geometry) => {
             var _data=[];
