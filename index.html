@@ -42,18 +42,18 @@
             </option>
           </select>
           <br>
-          各縣市庫存量
-          <button>查詢</button>
-        </div>
-        <div class="info"> 
-           {{ detail }}
-        </div>
-        <transition>
-          <div class="open_popup" v-if="isShow">
-            {{}}
-          </div>
-        </transition>
+         
        
+       </div>
+          <!-- popup detail-->
+          <transition>
+            <div class="open_popup" v-if="isShow">
+              <div class="popupBoard">
+                <div v-html="detail"></div>
+                <button @click="isShow=false">Close</button>
+              </div>
+            </div>
+          </transition>
       </div>
 </body>
 <style>
@@ -82,6 +82,7 @@ html,body,.container{
     align-items: center;
     width: 100%;
     height: 100%;
+    position: absolute;
 }
 .shop-list{
     display: flex;
@@ -117,7 +118,28 @@ html,body,.container{
 }
 .open_popup{
   position: fixed;
-
+  width: 100%;
+  height: 100%;
+  align-self: center;
+  background-color: rgba(255,255,255, 0.4);
+  z-index: 99999999;
+}
+.popupBoard{
+  display: flex;
+  width: 500px;
+  height: 250px;
+  margin: auto;
+  justify-content: center;
+  align-items: center; 
+  border: 1px solid #778888;
+  position: relative;
+  background-color: #999999;
+  top: 50%;
+  margin-top: -125px;
+}
+.popupBoard > button{
+  position: absolute;
+  bottom: 5%;
 }
 /**/
 svg {
@@ -141,6 +163,29 @@ svg line {
   fill: transparent;
   cursor: pointer;
 }
+.v-leave {
+  opacity: 1;
+}
+
+.v-leave-active {
+  transition: opacity .5s
+}
+
+.v-leave-to {
+  opacity: 0;
+}
+
+.v-enter {
+  opacity: 0;
+}
+
+.v-enter-active {
+  transition: opacity .5s
+}
+
+.v-enter-to {
+  opacity: 1;
+}
 </style>
 <script>
 Vue.component('v-select', VueSelect.VueSelect)
@@ -150,7 +195,7 @@ const TaiwanMap = new Vue({
   data: {
     h1: '縣市中文',
     h2: '縣市英文',
-    detail: '',
+    detail: "",
     citys:[],
     circle_svg2: {},
     projection:{}, 
@@ -245,7 +290,7 @@ const TaiwanMap = new Vue({
           })
           .on('click', d => {
             this.h1 = d.properties.COUNTYNAME; // 換中文名
-            this.h2 = d.properties.COUNTYENG; // 換英文名
+            this.h2 = d.properties.COUNTYENG;  // 換英文名
             // 有 .active 存在，就移除 .active
             if(document.querySelector('.active')) {
               document.querySelector('.active').classList.remove('active');
@@ -254,7 +299,6 @@ const TaiwanMap = new Vue({
             document.getElementById('city' + d.properties.COUNTYCODE).classList.add('active');
           });
          
-          var aa = [121.544742 , 25.050063];
           
       });
       return child;
@@ -281,7 +325,6 @@ const TaiwanMap = new Vue({
               }
             }
             console.log(_data);
-            
             let circle = circle_svg.selectAll('circle');
             let update = circle.data(_data);
             let enter = update.enter();
@@ -294,7 +337,12 @@ const TaiwanMap = new Vue({
               .attr("r", "4px")
               .attr("fill", "red")
               .on('click', d => {
-                alert(d.properties.mask_adult);
+                _this.detail=`<strong>${d.properties.name}</strong> <br>
+                  口罩剩餘：<strong>成人 - ${d.properties.mask_adult ? `${d.properties.mask_adult} 個` : '未取得資料'}/ 兒童 - ${d.properties.mask_child ? `${d.properties.mask_child} 個` : '未取得資料'}</strong><br>
+                  地址: <a href="https://www.google.com.tw/maps/place/${d.properties.address}" target="_blank">${d.properties.address}</a><br>
+                  電話: ${d.properties.phone}<br>
+                  <small>最後更新時間: ${d.properties.updated}</small>`;
+                  _this.isShow=true;
               });
 
             enter
@@ -305,8 +353,14 @@ const TaiwanMap = new Vue({
               .attr("r", "4px")
               .attr("fill", "red")
               .on('click', d => {
-                alert(d.properties.mask_adult);
+                 _this.detail=`<strong>${d.properties.name}</strong> <br>
+                  口罩剩餘：<strong>成人 - ${d.properties.mask_adult ? `${d.properties.mask_adult} 個` : '未取得資料'}/ 兒童 - ${d.properties.mask_child ? `${d.properties.mask_child} 個` : '未取得資料'}</strong><br>
+                  地址: <a href="https://www.google.com.tw/maps/place/${d.properties.address}" target="_blank">${d.properties.address}</a><br>
+                  電話: ${d.properties.phone}<br>
+                  <small>最後更新時間: ${d.properties.updated}</small>`;
+                  _this.isShow=true;
               });
+
             exit.remove();
             
           });
