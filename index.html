@@ -235,7 +235,7 @@ const TaiwanMap = new Vue({
       var x,y,s;
       var zoom = d3.behavior.zoom()
       .translate([0, 0])
-      .scaleExtent([1, 10]) //scaleExtent 設為 [1,10]，最大值鎖定在 10 倍大，預設的 scale 設為 1
+      .scaleExtent([1, 20]) //scaleExtent 設為 [1,10]，最大值鎖定在 10 倍大，預設的 scale 設為 1
       .scale(1)
       .on("zoom", zoomed);
       function zoomed(){
@@ -243,7 +243,7 @@ const TaiwanMap = new Vue({
         var y=d3.event.translate[1];
         var s=d3.event.scale;
         console.log("transform:"+ "translate(" + x +","+ y + ") scale(" + s + ")")
-        svg.attr("transform", "translate(" + x +","+ y + ") scale(" + s + ")");
+        child.attr("transform", "translate(" + x +","+ y + ") scale(" + s + ")");
       }
       child.call(zoom);
 
