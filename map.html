@@ -164,10 +164,10 @@ let osmMap = {};
 const vue =new Vue({
     el:"#app",
     data: () => ({
-    data: {},
-    cityName: [],
-    marker:{},
-    osmMap: {},
+    data: {},       ///口罩地圖資料
+    cityName: [],   //縣市區域資料
+    marker:{},      //各藥局的點
+    osmMap: {},     //openstreetmap 
     select: {
       city: '台北市',
       area: '大安區',
@@ -187,12 +187,11 @@ const vue =new Vue({
                 minZoom: 7,
                 zoomControl: false
             });
-
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                 { attribution: 'Map data &copy; <a target="_blank" href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a target="_blank" href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>' }).addTo(osmMap);
-    L.control.zoom({
-                position: 'topright'
-    }).addTo(osmMap);
+    // L.control.zoom({
+    //             position: 'topright'
+    // }).addTo(osmMap);
 
 
     Promise.all([
