@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.4.1/leaflet.markercluster.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.2/axios.min.js"></script>
 
     <script src="https://d3js.org/d3.v3.min.js"></script>
@@ -175,18 +176,24 @@ const vue =new Vue({
   }),
   mounted(){
     //台北座標
-    osmMap = L.map('map', {
-      center: [25.03, 121.55],
-      zoom: 15,
-    });
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '<a target="_blank" href="https://www.openstreetmap.org/">© OpenStreetMap 貢獻者</a>',
-      maxZoom: 20,
+    // osmMap = L.map('map', {
+    //   center: [25.03, 121.55],
+    //   zoom: 15,
+    // });
+    osmMap= L.map('map', {
+                center: [25.03, 121.55],
+                zoom: 15,
+                maxBounds: L.latLngBounds(L.latLng(28, 115), L.latLng(20, 127)), //最大範圍
+                minZoom: 7,
+                zoomControl: false
+            });
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                { attribution: 'Map data &copy; <a target="_blank" href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a target="_blank" href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>' }).addTo(osmMap);
+    L.control.zoom({
+                position: 'topright'
     }).addTo(osmMap);
 
-    // L.marker([51.5, -0.09]).addTo(map)
-    // .bindPopup('A pretty CSS3 popup.<br> Easily customizable.')
-    // .openPopup();
 
     Promise.all([
       axios('https://raw.githubusercontent.com/kiang/pharmacies/master/json/points.json'),
@@ -217,18 +224,20 @@ const vue =new Vue({
     },
     removeMapMaker(){
       //移除all makers
-      osmMap.removeLayer(this.marker);
+      osmMap.eachLayer((layer) => {
+        if (layer instanceof L.Marker) {
+          osmMap.removeLayer(layer);
+        }
+      });
     }
     ,updateSelect(event){
-      console.log(osmMap);
+     
       this.removeMapMaker();
       this.updateMarker();
       
     },
     addMapMarker(x, y, item){
-        // L.marker([51.5, -0.09]).addTo(map)
-        // .bindPopup('A pretty CSS3 popup.<br> Easily customizable.')
-        // .openPopup();
+
         const icon = item.mask_adult || item.mask_child ? icons.green : icons.grey;
         ///選定map範圍
         osmMap.panTo(new L.LatLng(y, x));
