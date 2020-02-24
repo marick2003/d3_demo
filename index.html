@@ -60,9 +60,8 @@ const TaiwanMap = new Vue({
   data: {
     h1: '縣市中文',
     h2: '縣市英文',
-    detail: "",
-    citys:[],
-    circle_svg2: {},
+    detail: "",     //popup 資訊內容
+    citys:[],       //縣市
     projection:{}, 
     isShow: false,
   },
@@ -112,28 +111,13 @@ const TaiwanMap = new Vue({
       }
       child.call(zoom);
 
-      // var drag = d3.behavior.drag()
-      // .origin(function(d) { return d; })
-      // .on("drag", function(){
+      var drag = d3.behavior.drag()
+      .origin(function(d) { return d; })
+      .on("drag", function(){
+        child.attr("cx", d.x = d3.event.dx).attr("cy", d.y = d3.event.dy);
+      });
+     //child.call(drag);
 
-      //   child.attr("cx", d.x = d3.event.dx).attr("cy", d.y = d3.event.dy);
-      // });
-      // child.call(drag);
-      //拖放效果
-      //  var drag = d3.behavior.drag()
-      //     .on('drag', function (s) {
-      //         // Current position:
-      //         this.x = this.x || 0;
-      //         this.y = this.y || 0;
-      //         // Update thee position with the delta x and y applied by the drag:
-      //         this.x += d3.event.dx;
-      //         this.y += d3.event.dy;
-      //         var s=d3.event.scale;   
-      //         console.log(d3.event);     
-      //         child
-      //             .attr('transform', 'translate(' + this.x + ',' + this.y + ')');
-      //     });
-      //  child.call(drag);
 
       // 讓d3抓GeoJSON檔，並寫入path的路徑
       var url = 'dist/COUNTY_MOI_1081121.geojson';
@@ -185,7 +169,6 @@ const TaiwanMap = new Vue({
       //dist/points.json
       var test_url = 'https://raw.githubusercontent.com/kiang/pharmacies/master/json/points.json';
       var circle_svg= await d3.select('#svg g');
-
       await d3.json(test_url, (error, geometry) => {
             var _data=[];
       
@@ -209,16 +192,15 @@ const TaiwanMap = new Vue({
               .attr("cx", function(d, i) {
                 return _this.projection(d.geometry.coordinates)[0]; })
               .attr("cy", function (d) {  return _this.projection(d.geometry.coordinates)[1]; })
-              .attr("r", "4px")
-              .attr("fill", "red")
-             ;
+              .attr("r", function(d){ return d.properties.mask_adult*0.0025 > 5 ? 5 : d.properties.mask_adult*0.0025})
+              .attr("fill", "red");
 
             enter
               .append("circle")
               .attr("cx", function(d, i) {
                 return _this.projection(d.geometry.coordinates)[0]; })
               .attr("cy", function (d) {  return _this.projection(d.geometry.coordinates)[1]; })
-              .attr("r", "4px")
+              .attr("r", function(d){ return d.properties.mask_adult*0.0025 > 5 ? 5 : d.properties.mask_adult*0.0025})
               .attr("fill", "red")
               .on('click', d => {
                  _this.detail=`<strong>${d.properties.name}</strong> <br>

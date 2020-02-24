@@ -15,8 +15,7 @@
     <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.4.1/leaflet.markercluster.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.2/axios.min.js"></script>
-
-    <script src="https://d3js.org/d3.v3.min.js"></script>
+    <link rel="stylesheet" href="./index_style.css">
     <title>MaskMap</title>
 </head>
 <body>
@@ -87,47 +86,7 @@
 </body>
 </html>
 <style>
-.loading{
-  position: fixed;
-  width: 100%;
-  height: 100%;
-  background-color: lightblue;
-  z-index: 5000;
-  display: flex;
-  justify-content: center;
-  align-items: center; 
-}
-#map {
-  height: 100vh;
-}
-.toolbox {
 
-  height: 100vh;
-  overflow-y: auto;
-}
-.v-leave {
-  opacity: 1;
-}
-
-.v-leave-active {
-  transition: opacity .5s
-}
-
-.v-leave-to {
-  opacity: 0;
-}
-
-.v-enter {
-  opacity: 0;
-}
-
-.v-enter-active {
-  transition: opacity .5s
-}
-
-.v-enter-to {
-  opacity: 1;
-}
 
 </style>
 <script>
@@ -167,7 +126,8 @@ const vue =new Vue({
     data: {},       ///口罩地圖資料
     cityName: [],   //縣市區域資料
     marker:{},      //各藥局的點
-    osmMap: {},     //openstreetmap 
+    osmMap: null,     //openstreetmap 
+    markers:{},
     select: {
       city: '台北市',
       area: '大安區',
@@ -180,20 +140,20 @@ const vue =new Vue({
     //   center: [25.03, 121.55],
     //   zoom: 15,
     // });
-    osmMap= L.map('map', {
-                center: [25.03, 121.55],
-                zoom: 15,
-                maxBounds: L.latLngBounds(L.latLng(28, 115), L.latLng(20, 127)), //最大範圍
+    var tiles=  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                { attribution: 'Map data &copy; <a target="_blank" href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a target="_blank" href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>' });
+    this.osmMap= L.map('map', {
+            center: [23.6334772, 120.852944],
+                zoom: 7,
+                maxBounds: L.latLngBounds(L.latLng(28, 115), L.latLng(20, 127)),
                 minZoom: 7,
-                zoomControl: false
+                zoomControl: false,
+                layers: [tiles]
             });
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                { attribution: 'Map data &copy; <a target="_blank" href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a target="_blank" href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>' }).addTo(osmMap);
-    // L.control.zoom({
-    //             position: 'topright'
-    // }).addTo(osmMap);
-
-
+           
+    this.markers =L.markerClusterGroup({ chunkedLoading: true });
+    console.log(this.markers);
+    //es7 Promise.all() 會 同時執行 以下 Promise，在全部完成後統一回傳陣列
     Promise.all([
       axios('https://raw.githubusercontent.com/kiang/pharmacies/master/json/points.json'),
       axios('cityName.json'),
@@ -203,29 +163,43 @@ const vue =new Vue({
       this.updateMarker();
       this.isloading=false;
     });
-
+     
   },
   methods:{
-    updateMarker() {
-      
+     updateMarker() { 
+      ///縣市區域範圍篩選
       const stores = this.data.filter((store) => {
         if (!this.select.area) {
           return store.properties.address.match(this.select.city);
         }
         return store.properties.address.match(this.select.area);
       });
-      console.log(stores);
-      stores.forEach((store) => {
+     stores.forEach((store) => {
         const { properties, geometry } = store;
+        //this.addMapMarker(geometry.coordinates[0], geometry.coordinates[1], properties);
 
-        this.addMapMarker(geometry.coordinates[0], geometry.coordinates[1], properties);
+        
+        const icon = properties.mask_adult || properties.mask_child ? icons.green : icons.grey;
+
+        ///選定map範圍
+       
+        //marker add popup
+        var marker=L.marker([geometry.coordinates[1],geometry.coordinates[0]],{ title: properties.id }).addTo(this.osmMap).bindPopup(`<strong>${properties.name}</strong> <br>
+          口罩剩餘：<strong>成人 - ${properties.mask_adult ? `${properties.mask_adult} 個` : '未取得資料'}/ 兒童 - ${properties.mask_child ? `${properties.mask_child} 個` : '未取得資料'}</strong><br>
+          地址: <a href="https://www.google.com.tw/maps/place/${properties.address}" target="_blank">${properties.address}</a><br>
+          電話: ${properties.phone}<br>
+          <small>最後更新時間: ${properties.updated}</small>`);
+         // var marker = L.marker(L.latLng(a[0], a[1]), { title: title });
+          this.markers.addLayer(marker);
       });
+      this.osmMap.addLayer(this.markers); 
     },
     removeMapMaker(){
-      //移除all makers
-      osmMap.eachLayer((layer) => {
+      //移除all markers
+      this.osmMap.eachLayer((layer) => {
         if (layer instanceof L.Marker) {
-          osmMap.removeLayer(layer);
+          this.osmMap.removeLayer(layer);
+         
         }
       });
     }
@@ -235,24 +209,13 @@ const vue =new Vue({
       this.updateMarker();
       
     },
-    addMapMarker(x, y, item){
-
-        const icon = item.mask_adult || item.mask_child ? icons.green : icons.grey;
-        ///選定map範圍
-        osmMap.panTo(new L.LatLng(y, x));
-        //marker add popup
-        this.marker=L.marker([y, x], {
-            icon,
-          }).addTo(osmMap).bindPopup(`<strong>${item.name}</strong> <br>
-          口罩剩餘：<strong>成人 - ${item.mask_adult ? `${item.mask_adult} 個` : '未取得資料'}/ 兒童 - ${item.mask_child ? `${item.mask_child} 個` : '未取得資料'}</strong><br>
-          地址: <a href="https://www.google.com.tw/maps/place/${item.address}" target="_blank">${item.address}</a><br>
-          電話: ${item.phone}<br>
-          <small>最後更新時間: ${item.updated}</small>`);
+     addMapMarker(x, y, item){
+        
+      
 
     }
   }
   
-
 
 })
 </script>
