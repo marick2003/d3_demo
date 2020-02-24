@@ -151,7 +151,7 @@ const vue =new Vue({
                 layers: [tiles]
             });
            
-    this.markers =L.markerClusterGroup({ chunkedLoading: true });
+    
     console.log(this.markers);
     //es7 Promise.all() 會 同時執行 以下 Promise，在全部完成後統一回傳陣列
     Promise.all([
@@ -167,6 +167,8 @@ const vue =new Vue({
   },
   methods:{
      updateMarker() { 
+
+
       ///縣市區域範圍篩選
       const stores = this.data.filter((store) => {
         if (!this.select.area) {
@@ -174,14 +176,11 @@ const vue =new Vue({
         }
         return store.properties.address.match(this.select.area);
       });
+    this.markers = new L.markerClusterGroup().addTo(this.osmMap);
      stores.forEach((store) => {
         const { properties, geometry } = store;
         //this.addMapMarker(geometry.coordinates[0], geometry.coordinates[1], properties);
 
-        
-        const icon = properties.mask_adult || properties.mask_child ? icons.green : icons.grey;
-
-        ///選定map範圍
        
         //marker add popup
         var marker=L.marker([geometry.coordinates[1],geometry.coordinates[0]],{ title: properties.id }).addTo(this.osmMap).bindPopup(`<strong>${properties.name}</strong> <br>

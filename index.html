@@ -22,7 +22,7 @@
     <div class="container" id="app">
         <div class="taiwan-map" ref="map">
           <div id="map">
-            <svg id="svg" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" height="100%" width="100%"></svg>
+            <svg id="svg" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" height="100%" width="100%" ></svg>
           </div>
         </div>
         <div class="shop-list">
@@ -37,8 +37,6 @@
             </option>
           </select>
           <br>
-         
-       
        </div>
           <!-- popup detail-->
           <transition>
@@ -64,11 +62,15 @@ const TaiwanMap = new Vue({
     citys:[],       //縣市
     projection:{}, 
     isShow: false,
+    width:0,
+    height:0,
+    x:0,y:0,s:0,
+
   },
   methods: {
     async getTaiwanMap() {
-      const width = (this.$refs.map.offsetWidth).toFixed(),
-            height = (this.$refs.map.offsetHeight).toFixed() <700 ? 700 : (this.$refs.map.offsetHeight).toFixed();
+       this.width = (this.$refs.map.offsetWidth).toFixed(),
+       this.height = (this.$refs.map.offsetHeight).toFixed() <700 ? 700 : (this.$refs.map.offsetHeight).toFixed();
       // 判斷螢幕寬度，給放大值
       let mercatorScale, w = window.screen.width;
       if(w > 1366) {
@@ -83,7 +85,7 @@ const TaiwanMap = new Vue({
       //mercator投影設定中心座標與縮放大小
        this.projection = await d3.geo.mercator().center([121,24])
           .scale(mercatorScale)
-          .translate([width/2, height/2.5]);
+          .translate([this.width/2, this.height/2.5]);
       // d3：svg path 產生器
       var path = await d3.geo.path().projection(
         // 座標變換函式
@@ -91,34 +93,24 @@ const TaiwanMap = new Vue({
       );
       //讓d3抓svg，並寫入寬高
       var svg = await d3.select('#svg')
-          .attr('width', width)
-          .attr('height', height)
-          .attr('viewBox', `0 0 ${width} ${height}`);
+          .attr('width', this.width)
+          .attr('height', this.height)
+          .attr('viewBox', `0 0 ${this.width} ${this.height}`);
       var child = svg.append("g");
 
       //縮放效果
-      var x,y,s;
       var zoom = d3.behavior.zoom()
       .translate([0, 0])
       .scaleExtent([1, 20]) //scaleExtent 設為 [1,10]，最大值鎖定在 10 倍大，預設的 scale 設為 1
       .scale(1)
       .on("zoom", zoomed);
       function zoomed(){
-        var x=d3.event.translate[0];
-        var y=d3.event.translate[1];
-        var s=d3.event.scale;
-        child.attr("transform", "translate(" + x +","+ y + ") scale(" + s + ")");
+        this.x=d3.event.translate[0];
+        this.y=d3.event.translate[1];
+        this.s=d3.event.scale;
+        child.attr("transform", "translate(" + this.x +","+ this.y + ") scale(" + this.s + ")");
       }
       child.call(zoom);
-
-      var drag = d3.behavior.drag()
-      .origin(function(d) { return d; })
-      .on("drag", function(){
-        child.attr("cx", d.x = d3.event.dx).attr("cy", d.y = d3.event.dy);
-      });
-     //child.call(drag);
-
-
       // 讓d3抓GeoJSON檔，並寫入path的路徑
       var url = 'dist/COUNTY_MOI_1081121.geojson';
       await d3.json(url, (error, geometry) => {
@@ -136,14 +128,6 @@ const TaiwanMap = new Vue({
           .attr('d', path)
           .attr('class',"svg_color")
           .attr({
-            'cx': function(d){return d.cx;},
-            'cy': function(d){return d.cy;},
-            'x': function(d){return d.x;},
-            'y': function(d){return d.y;},
-            'r': function(d){return d.r;},
-            'fill': function(d){return d.fill;}
-          })
-          .attr({
             // 設定id，為了click時加class用
             id: (d) => 'city' + d.properties.COUNTYCODE
           })
@@ -156,7 +140,20 @@ const TaiwanMap = new Vue({
             }
             // 被點擊的縣市加上 .active
             document.getElementById('city' + d.properties.COUNTYCODE).classList.add('active');
+            //if (active === d) return reset();
+            //g.selectAll(".active").classed("active", false);
+            //d3.select(this).classed("active", active = d);
+            
+            //將path 轉成有邊線的矩形資料
+            var b = path.bounds(d);
+            console.log(b);
+              child.transition().duration(750).attr("transform",
+                  "translate(" + this.projection.translate() + ")"
+                  + "scale(" + .95 / Math.max((b[1][0] - b[0][0]) / this.width, (b[1][1] - b[0][1]) / this.height) + ")"
+                  + "translate(" + -(b[1][0] + b[0][0]) / 2 + "," + -(b[1][1] + b[0][1]) / 2 + ")");
           });
+
+         
 
       });
       return child;
@@ -176,13 +173,14 @@ const TaiwanMap = new Vue({
             .key(function(d){return d.properties["mask_adult"];})
             .entries(geometry.features); 
             console.log(a);
+
             for (x in geometry.features) {
               ///成人口罩 > 0
               if(city_name==geometry.features[x].properties.county && geometry.features[x].properties.mask_adult>0){
                 _data.push(geometry.features[x]);
               }
             }
-            console.log(_data);
+       
             let circle = circle_svg.selectAll('circle');
             let update = circle.data(_data);
             let enter = update.enter();
@@ -218,16 +216,15 @@ const TaiwanMap = new Vue({
     },
     onChange(event){
 
-      console.log(event.target.value);
-      this.getpoint(event.target.value);
-
+          console.log(event.target.value);
+          this.getpoint(event.target.value);
+         
     },
     
   },
   mounted() {
-
     this.getTaiwanMap();
-   
+        
   },
   create(){
 
