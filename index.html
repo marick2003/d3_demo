@@ -111,6 +111,14 @@ const TaiwanMap = new Vue({
         child.attr("transform", "translate(" + x +","+ y + ") scale(" + s + ")");
       }
       child.call(zoom);
+
+      // var drag = d3.behavior.drag()
+      // .origin(function(d) { return d; })
+      // .on("drag", function(){
+
+      //   child.attr("cx", d.x = d3.event.dx).attr("cy", d.y = d3.event.dy);
+      // });
+      // child.call(drag);
       //拖放效果
       //  var drag = d3.behavior.drag()
       //     .on('drag', function (s) {
