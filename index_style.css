@@ -8,7 +8,7 @@ html,body,.container{
     background-color: cadetblue;
   }
   .svg_color{
-      fill: #F6831D;
+      fill: #008b8b;
       stroke-dashoffset: 0;
       stroke-dasharray: 700;
       stroke-width: 1;
@@ -151,4 +151,16 @@ html,body,.container{
     height: 100vh;
     overflow-y: auto;
   }
-  
+  /* // 0 綠#008b8b  >=1 藍#4682b4  3>=黃 #f0e68c  >5=紅 #ff4500 */
+  .color_g{
+    fill: #008b8b ;
+  }
+  .color_b{
+    fill: #4682b4 ;
+  }
+  .color_w{
+    fill: #f0e68c ;
+  }
+  .color_r{
+    fill: #ff4500 ;
+  }

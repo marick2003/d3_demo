@@ -12,6 +12,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.min.css">
     <link rel="stylesheet" href="./index_style.css">
     <script src="https://d3js.org/d3.v3.min.js"></script>
+    <script src="https://d3js.org/d3-queue.v3.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.2/axios.min.js"></script>
     <script
   src="https://code.jquery.com/jquery-3.4.1.min.js"
   integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
@@ -65,6 +67,7 @@ const TaiwanMap = new Vue({
     width:0,
     height:0,
     x:0,y:0,s:0,
+    cacheData : [],
 
   },
   methods: {
@@ -113,7 +116,31 @@ const TaiwanMap = new Vue({
       child.call(zoom);
       // 讓d3抓GeoJSON檔，並寫入path的路徑
       var url = 'dist/COUNTY_MOI_1081121.geojson';
+      var _d="./Weekly_Age_County_Gender_19CoV.json";
+      var _disease={};
+      await d3.json(_d, (error, _data) => {
+        if (error) throw error;
+
+
+       
+        const newData = [];
+        _data.forEach((item) => {
+          const str = item["縣市"];
+          if (typeof this.cacheData[str] === 'undefined') {
+            this.cacheData[str] = item;
+          } else {
+            
+              this.cacheData[str]["確定病例數"] = parseInt(item["確定病例數"])+ parseInt(this.cacheData[str]["確定病例數"]);
+          }
+        });
+          
+          
+        
+       
+      });
+      
       await d3.json(url, (error, geometry) => {
+        var _this =this;
         if (error) throw error;
         for (x in geometry.features) {
           console.log(geometry.features[x].properties.COUNTYNAME);
@@ -140,10 +167,6 @@ const TaiwanMap = new Vue({
             }
             // 被點擊的縣市加上 .active
             document.getElementById('city' + d.properties.COUNTYCODE).classList.add('active');
-            //if (active === d) return reset();
-            //g.selectAll(".active").classed("active", false);
-            //d3.select(this).classed("active", active = d);
-            
             //將path 轉成有邊線的矩形資料
             var b = path.bounds(d);
             console.log(b);
@@ -151,8 +174,29 @@ const TaiwanMap = new Vue({
                   "translate(" + this.projection.translate() + ")"
                   + "scale(" + .95 / Math.max((b[1][0] - b[0][0]) / this.width, (b[1][1] - b[0][1]) / this.height) + ")"
                   + "translate(" + -(b[1][0] + b[0][0]) / 2 + "," + -(b[1][1] + b[0][1]) / 2 + ")");
+          }).each(function(d, i) {
+                  // 0 綠#008b8b  >=1 藍#4682b4  3>=黃 #f0e68c  >5=紅 #ff4500
+                  console.log(d.properties.COUNTYNAME);
+                  console.log(_this.cacheData[d.properties.COUNTYNAME]);
+                  console.log(_this.cacheData.indexOf(d.properties.COUNTYNAME));
+                  if(_this.cacheData[d.properties.COUNTYNAME]){
+                    if(_this.cacheData[d.properties.COUNTYNAME]["確定病例數"] <=0){
+                      this.classList.add('color_g');
+                    }
+                    if(_this.cacheData[d.properties.COUNTYNAME]["確定病例數"] >=1){
+                      this.classList.add('color_b');
+                    }
+                    if(_this.cacheData[d.properties.COUNTYNAME]["確定病例數"] >=3){
+                      this.classList.add('color_w');
+                    }
+                    if(_this.cacheData[d.properties.COUNTYNAME]["確定病例數"] >5){
+                      this.classList.add('color_r');
+                    }
+                    
+                  }
+               
+                  
           });
-
          
 
       });
@@ -165,7 +209,11 @@ const TaiwanMap = new Vue({
       //https://raw.githubusercontent.com/kiang/pharmacies/master/json/points.json
       //dist/points.json
       var test_url = 'https://raw.githubusercontent.com/kiang/pharmacies/master/json/points.json';
+    
       var circle_svg= await d3.select('#svg g');
+
+
+
       await d3.json(test_url, (error, geometry) => {
             var _data=[];
       
